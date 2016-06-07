@@ -17,6 +17,7 @@
 Utilities for making it easier to use OAuth 2.0 on Google Compute Engine.
 """
 
+import datetime
 import json
 import logging
 import warnings
@@ -29,6 +30,7 @@ from oauth2client._helpers import _from_bytes
 from oauth2client import util
 from oauth2client.client import HttpAccessTokenRefreshError
 from oauth2client.client import AssertionCredentials
+from oauth2client.client import _UTCNOW
 
 
 __author__ = 'jcgregorio@google.com (Joe Gregorio)'
@@ -125,6 +127,7 @@ class AppAssertionCredentials(AssertionCredentials):
         Raises:
             HttpAccessTokenRefreshError: When the refresh fails.
         """
+        now = _UTCNOW()
         response, content = http_request(
             META, headers={'Metadata-Flavor': 'Google'})
         content = _from_bytes(content)
@@ -135,6 +138,7 @@ class AppAssertionCredentials(AssertionCredentials):
                 raise HttpAccessTokenRefreshError(str(e),
                                                   status=response.status)
             self.access_token = token_content['access_token']
+            self.token_expiry = now + datetime.timedelta(seconds=token_content['expires_in'])
         else:
             if response.status == http_client.NOT_FOUND:
                 content += (' This can occur if a VM was created'
